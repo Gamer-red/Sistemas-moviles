@@ -1,5 +1,6 @@
 package com.example.nelto
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,24 +19,47 @@ class LoginActivity : AppCompatActivity() {
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
         val btnRegister = findViewById<MaterialButton>(R.id.btnRegister)
 
-        // Acción del botón INGRESAR
+
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
-            // Validación básica
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
-            } else {
-                // Aquí irá la lógica de autenticación después
+
+            var isValid = true
+
+
+            if (email.isEmpty()) {
+                etEmail.error = "El correo es requerido"
+                isValid = false
+            } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.error = "Correo inválido"
+                isValid = false
+            }
+
+            if (password.isEmpty()) {
+                etPassword.error = "La contraseña es requerida"
+                isValid = false
+            } else if (password.length < 6) {
+                etPassword.error = "Mínimo 6 caracteres"
+                isValid = false
+            }
+
+
+            if (isValid) {
+
                 Toast.makeText(this, "Iniciando sesión...", Toast.LENGTH_SHORT).show()
+
+                // Ir a la pantalla principal
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
             }
         }
 
         // Acción del botón REGISTRARSE
         btnRegister.setOnClickListener {
-            Toast.makeText(this, "Ir al registro", Toast.LENGTH_SHORT).show()
-            // Aquí después abriremos la pantalla de registro
+            val intent = Intent(this, RegisterActivity::class.java)
+            startActivity(intent)
         }
     }
 }

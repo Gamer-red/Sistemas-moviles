@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/design_default_color_primary"
-        app:title="Mi Red Social"
+        app:title="Nelto"
         app:titleTextColor="@android:color/white"
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/top_app_bar_menu" />

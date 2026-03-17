@@ -19,7 +19,8 @@ class PostAdapter(
     private var posts: List<Post>,
     private val onLikeClick: (Post) -> Unit,
     private val onCommentClick: (Post) -> Unit,
-    private val onPostClick: (Post) -> Unit
+    private val onPostClick: (Post) -> Unit,
+    private val onGuardarClick: (Post) -> Unit
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
     // ViewHolder: Contiene las vistas de cada item
@@ -33,6 +34,8 @@ class PostAdapter(
         val tvLikes: TextView = itemView.findViewById(R.id.tvLikes)
         val btnComment: MaterialButton = itemView.findViewById(R.id.btnComment)
         val tvComentarios: TextView = itemView.findViewById(R.id.tvComentarios)
+
+        val btnGuardar: MaterialButton = itemView.findViewById(R.id.btnGuardar)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
@@ -76,6 +79,18 @@ class PostAdapter(
 
         holder.itemView.setOnClickListener {
             onPostClick(post)
+        }
+
+        if (post.guardado) {
+            holder.btnGuardar.setIconResource(android.R.drawable.ic_menu_save)
+            holder.btnGuardar.text = "Guardado"
+        } else {
+            holder.btnGuardar.setIconResource(android.R.drawable.ic_menu_save)
+            holder.btnGuardar.text = "Guardar"
+        }
+
+        holder.btnGuardar.setOnClickListener {
+            onGuardarClick(post)
         }
     }
 

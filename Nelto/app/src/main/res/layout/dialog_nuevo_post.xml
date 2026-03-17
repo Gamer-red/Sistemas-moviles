@@ -1,55 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
-    <!-- Campo Título -->
-    <com.google.android.material.textfield.TextInputLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_marginBottom="16dp"
-        app:counterEnabled="true"
-        app:counterMaxLength="30">
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@android:color/white">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etNuevoPostTitulo"
+        <!-- Título del diálogo -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Título"
-            android:maxLength="30"
-            android:inputType="text"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            android:text="Crear nueva publicación"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
 
-    <!-- Campo Descripción -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_marginBottom="16dp"
-        app:counterEnabled="true"
-        app:counterMaxLength="255">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etNuevoPostDescripcion"
+        <!-- Campo Título -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Descripción"
-            android:maxLength="255"
-            android:maxLines="5"
-            android:gravity="top"
-            android:inputType="textMultiLine"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:counterEnabled="true"
+            app:counterMaxLength="30">
 
-    <!-- Checkbox para borrador (opcional) -->
-    <CheckBox
-        android:id="@+id/cbBorrador"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Guardar como borrador"
-        android:visibility="gone"/>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNuevoPostTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Título *"
+                android:maxLength="30"
+                android:inputType="text"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-</LinearLayout>
+        <!-- Campo Descripción -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            app:counterEnabled="true"
+            app:counterMaxLength="255">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNuevoPostDescripcion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Descripción *"
+                android:maxLength="255"
+                android:maxLines="5"
+                android:gravity="top"
+                android:inputType="textMultiLine"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Sección de imágenes -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Imágenes"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Botón para agregar imágenes -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAgregarImagen"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="AGREGAR IMÁGENES"
+            app:icon="@android:drawable/ic_menu_gallery"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Contenedor para previsualización de imágenes -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvImagenesSeleccionadas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"/>
+
+        <!-- Grid de imágenes seleccionadas (versión simple sin RecyclerView) -->
+        <LinearLayout
+            android:id="@+id/linearLayoutImagenes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(Aquí se mostrarán las imágenes seleccionadas)"
+                android:textColor="#666666"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <!-- Línea divisoria -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- Checkbox para borrador -->
+
+        <!-- Botones de acción -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="8dp">
+
+            <!-- Botón Cancelar/Salir -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="CANCELAR"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_marginEnd="8dp"/>
+
+            <!-- Botón Publicar -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPublicar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="PUBLICAR"
+                style="@style/Widget.MaterialComponents.Button"/>
+
+        </LinearLayout>
+
+        <!-- Botón Guardar Borrador (adicional) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGuardarBorrador"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="GUARDAR COMO BORRADOR"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            app:icon="@android:drawable/ic_menu_save"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Mensaje de campos obligatorios -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="* Campos obligatorios"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            android:layout_marginTop="16dp"
+            android:gravity="center"/>
+
+    </LinearLayout>
+</ScrollView>

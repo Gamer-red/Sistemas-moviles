@@ -90,7 +90,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:weightSum="3">
 
         <!-- Botón Like -->
         <LinearLayout
@@ -98,7 +99,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:paddingVertical="4dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLike"
@@ -107,7 +109,8 @@
                 android:text="Me gusta"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 app:icon="@android:drawable/btn_star_big_off"
-                app:iconGravity="textStart"/>
+                app:iconGravity="textStart"
+                android:paddingEnd="4dp"/>
 
             <TextView
                 android:id="@+id/tvLikes"
@@ -115,7 +118,8 @@
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#666666"
-                android:layout_marginStart="4dp"/>
+                android:textSize="14sp"
+                android:layout_marginStart="0dp"/>
         </LinearLayout>
 
         <!-- Botón Comentar -->
@@ -124,7 +128,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:paddingVertical="4dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnComment"
@@ -133,7 +138,8 @@
                 android:text="Comentar"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 app:icon="@android:drawable/ic_menu_edit"
-                app:iconGravity="textStart"/>
+                app:iconGravity="textStart"
+                android:paddingEnd="4dp"/>
 
             <TextView
                 android:id="@+id/tvComentarios"
@@ -141,7 +147,26 @@
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#666666"
-                android:layout_marginStart="4dp"/>
+                android:textSize="14sp"
+                android:layout_marginStart="0dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingVertical="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGuardar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Guardar"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                app:icon="@android:drawable/ic_menu_save"
+                app:iconGravity="textStart"/>
         </LinearLayout>
 
     </LinearLayout>

@@ -19,6 +19,8 @@ class PostsFragment : Fragment() {
     private lateinit var fabNuevoPost: FloatingActionButton
     private lateinit var postAdapter: PostAdapter  // lateinit está bien
 
+    private val publicacionesGuardadas = mutableListOf<Post>()
+
     // Lista de posts
     private val postsList = mutableListOf<Post>()
 
@@ -48,7 +50,8 @@ class PostsFragment : Fragment() {
             posts = postsList,
             onLikeClick = { post -> manejarLike(post) },
             onCommentClick = { post -> abrirComentarios(post) },
-            onPostClick = { post -> verPostDetalle(post) }
+            onPostClick = { post -> verPostDetalle(post) },
+            onGuardarClick = { post -> manejarGuardado(post) }
         )
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -57,7 +60,7 @@ class PostsFragment : Fragment() {
 
     private fun setupListeners() {
         fabNuevoPost.setOnClickListener {
-
+            mostrarDialogoNuevoPost()
         }
     }
 
@@ -204,5 +207,36 @@ class PostsFragment : Fragment() {
             "Publicación creada",
             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
         ).show()
+    }
+
+    private fun manejarGuardado(post: Post) {
+        val index = postsList.indexOfFirst { it.id_publicaciones == post.id_publicaciones }
+        if (index != -1) {
+            val postActualizado = post.copy(
+                guardado = !post.guardado
+            )
+            postsList[index] = postActualizado
+            postAdapter.updatePosts(postsList)
+
+            if (postActualizado.guardado) {
+                // Agregar a guardados
+                if (!publicacionesGuardadas.any { it.id_publicaciones == post.id_publicaciones }) {
+                    publicacionesGuardadas.add(postActualizado)
+                }
+                com.google.android.material.snackbar.Snackbar.make(
+                    requireView(),
+                    "Publicación guardada",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                ).show()
+            } else {
+                // Quitar de guardados
+                publicacionesGuardadas.removeAll { it.id_publicaciones == post.id_publicaciones }
+                com.google.android.material.snackbar.Snackbar.make(
+                    requireView(),
+                    "Publicación eliminada de guardados",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 }

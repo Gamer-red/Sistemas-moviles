@@ -20,5 +20,6 @@ data class Post(
     val usuarioAlias: String = "",
     var usuarioDioLike: Boolean = false,
     var likes: Int = 0,
-    var comentarios: Int = 0
+    var comentarios: Int = 0,
+    var guardado: Boolean = false
 )

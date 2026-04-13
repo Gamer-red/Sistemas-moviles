@@ -67,4 +67,12 @@
         android:text="¿No tienes cuenta? Regístrate"
         style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
+    <Button
+        android:id="@+id/btnTestConexion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Probar conexión con backend"
+        android:layout_marginTop="16dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
 </LinearLayout>

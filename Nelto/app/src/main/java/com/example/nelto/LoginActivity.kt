@@ -50,21 +50,14 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)  // ← PRIMERO setContentView
 
-        authRepository = AuthRepository()
+
         sessionManager = SessionManager(this)
+        authRepository = AuthRepository(sessionManager)
 
         val etEmail = findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
         val btnRegister = findViewById<MaterialButton>(R.id.btnRegister)
-
-        // ← AHORA buscar el botón después de setContentView
-        val btnTest = findViewById<MaterialButton>(R.id.btnTestConexion)
-        if (btnTest != null) {
-            btnTest.setOnClickListener {
-                probarConexionBackend()
-            }
-        }
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()

@@ -1,137 +1,153 @@
 package com.example.nelto
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.nelto.data.repositories.AuthRepository
+import com.example.nelto.utils.SessionManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
-import com.example.nelto.models.Usuario
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.util.Log
+import java.io.ByteArrayOutputStream
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 
 class RegisterActivity : AppCompatActivity() {
 
-    private var avatarUri: Uri? = null
-    private lateinit var ivAvatar: ImageView
+    private lateinit var authRepository: AuthRepository
+    private lateinit var sessionManager: SessionManager
+    private var avatarBase64: String? = null
 
-    // Registro para seleccionar imagen de la galería
     private val seleccionarImagen = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
+        if (result.resultCode == RESULT_OK) {
             val data: Intent? = result.data
-            avatarUri = data?.data
-            // Mostrar la imagen seleccionada
-            ivAvatar.setImageURI(avatarUri)
+            val uri: Uri? = data?.data
+            if (uri != null) {
+                try {
+                    // Convertir imagen a Base64
+                    val inputStream = contentResolver.openInputStream(uri)
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                    // Redimensionar imagen para evitar que sea demasiado grande
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 300, 300, true)
+
+                    val baos = ByteArrayOutputStream()
+                    scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, baos)
+                    val imageBytes = baos.toByteArray()
+                    avatarBase64 = android.util.Base64.encodeToString(imageBytes, android.util.Base64.DEFAULT)
+
+                    Log.d("REGISTER_IMG", "✅ Imagen convertida a Base64")
+                    Log.d("REGISTER_IMG", "📏 Tamaño Base64: ${avatarBase64?.length} caracteres")
+
+                    // Mostrar preview
+                    findViewById<android.widget.ImageView>(R.id.ivAvatar).setImageURI(uri)
+                } catch (e: Exception) {
+                    Log.e("REGISTER_IMG", "❌ Error al procesar imagen: ${e.message}")
+                    Toast.makeText(this, "Error al procesar la imagen", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
-        initViews()
-        setupListeners()
-    }
 
-    private fun initViews() {
-        ivAvatar = findViewById(R.id.ivAvatar)
-        // Resto de vistas
-    }
 
-    private fun setupListeners() {
-        findViewById<MaterialButton>(R.id.btnSeleccionarAvatar).setOnClickListener {
-            abrirGaleria()
+        sessionManager = SessionManager(this)
+        authRepository = AuthRepository(sessionManager)
+
+        val etNombre = findViewById<TextInputEditText>(R.id.etNombre)
+        val etApellidoPaterno = findViewById<TextInputEditText>(R.id.etApellidoPaterno)
+        val etApellidoMaterno = findViewById<TextInputEditText>(R.id.etApellidoMaterno)
+        val etAlias = findViewById<TextInputEditText>(R.id.etAlias)
+        val etEmail = findViewById<TextInputEditText>(R.id.etEmail)
+        val etTelefono = findViewById<TextInputEditText>(R.id.etTelefono)
+        val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
+        val btnRegistrar = findViewById<MaterialButton>(R.id.btnRegistrar)
+        val btnSeleccionarAvatar = findViewById<MaterialButton>(R.id.btnSeleccionarAvatar)
+
+        btnSeleccionarAvatar.setOnClickListener {
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            seleccionarImagen.launch(intent)
         }
 
-        findViewById<MaterialButton>(R.id.btnRegistrar).setOnClickListener {
-            validarYRegistrar()
-        }
+        btnRegistrar.setOnClickListener {
+            val nombre = etNombre.text.toString().trim()
+            val apellidoPaterno = etApellidoPaterno.text.toString().trim()
+            val apellidoMaterno = etApellidoMaterno.text.toString().trim()
+            val alias = etAlias.text.toString().trim()
+            val email = etEmail.text.toString().trim()
+            val telefono = etTelefono.text.toString().trim()
+            val password = etPassword.text.toString().trim()
 
-        findViewById<MaterialButton>(R.id.btnIrALogin).setOnClickListener {
-            finish() // Vuelve a la pantalla anterior (Login)
-        }
-    }
+            if (nombre.isEmpty() || apellidoPaterno.isEmpty() || alias.isEmpty() ||
+                email.isEmpty() || telefono.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-    private fun abrirGaleria() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        seleccionarImagen.launch(intent)
-    }
+            btnRegistrar.isEnabled = false
 
-    private fun validarYRegistrar() {
-        // Obtener valores de los campos
-        val nombre = findViewById<TextInputEditText>(R.id.etNombre).text.toString().trim()
-        val apellidoPaterno = findViewById<TextInputEditText>(R.id.etApellidoPaterno).text.toString().trim()
-        val apellidoMaterno = findViewById<TextInputEditText>(R.id.etApellidoMaterno).text.toString().trim()
-        val alias = findViewById<TextInputEditText>(R.id.etAlias).text.toString().trim()
-        val email = findViewById<TextInputEditText>(R.id.etEmail).text.toString().trim()
-        val telefono = findViewById<TextInputEditText>(R.id.etTelefono).text.toString().trim()
-        val password = findViewById<TextInputEditText>(R.id.etPassword).text.toString().trim()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val result = authRepository.register(
+                        nombre = nombre,
+                        apellidoPaterno = apellidoPaterno,
+                        apellidoMaterno = apellidoMaterno,
+                        email = email,
+                        password = password,
+                        alias = alias,
+                        telefono = telefono,
+                        avatarBase64 = avatarBase64
+                    )
 
-        // ✅ Declaramos la variable de control
-        var isValid = true
+                    withContext(Dispatchers.Main) {
+                        btnRegistrar.isEnabled = true
 
-        // Validaciones
-        if (nombre.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etNombre).error = "Nombre requerido"
-            isValid = false
-        }
+                        if (result != null) {
+                            // Guardar sesión
+                            sessionManager.guardarToken(result.token)
+                            sessionManager.guardarSesionDesdeLogin(result.user)
 
-        if (apellidoPaterno.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etApellidoPaterno).error = "Apellido paterno requerido"
-            isValid = false
-        }
+                            Toast.makeText(
+                                this@RegisterActivity,
+                                "¡Registro exitoso! Bienvenido ${result.user.Nombre}",
+                                Toast.LENGTH_LONG
+                            ).show()
 
-
-
-        if (alias.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etAlias).error = "Alias requerido"
-            isValid = false
-        }
-
-        if (email.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etEmail).error = "Correo requerido"
-            isValid = false
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            findViewById<TextInputEditText>(R.id.etEmail).error = "Correo inválido"
-            isValid = false
-        }
-
-        if (telefono.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etTelefono).error = "Teléfono requerido"
-            isValid = false
-        } else if (telefono.length < 10) {
-            findViewById<TextInputEditText>(R.id.etTelefono).error = "Teléfono inválido (mínimo 10 dígitos)"
-            isValid = false
-        }
-
-        if (password.isEmpty()) {
-            findViewById<TextInputEditText>(R.id.etPassword).error = "Contraseña requerida"
-            isValid = false
-        } else if (password.length < 6) {
-            findViewById<TextInputEditText>(R.id.etPassword).error = "Mínimo 6 caracteres"
-            isValid = false
-        }
-
-
-        if (isValid) {
-            val nuevoUsuario = Usuario(
-                nombre = nombre,
-                apellidoPaterno = apellidoPaterno,
-                apellidoMaterno = apellidoMaterno,
-                alias = alias,
-                email = email,
-                telefono = telefono,
-                password = password,
-                avatarUri = avatarUri
-            )
-
-            Toast.makeText(this, "¡Registro exitoso! Bienvenido $alias", Toast.LENGTH_LONG).show()
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
+                            // Ir a MainActivity
+                            val intent = Intent(this@RegisterActivity, MainActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        } else {
+                            Toast.makeText(
+                                this@RegisterActivity,
+                                "Error en el registro. El correo podría estar duplicado.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        btnRegistrar.isEnabled = true
+                        Log.e("REGISTER_ERROR", "Error: ${e.message}")
+                        Toast.makeText(
+                            this@RegisterActivity,
+                            "Error: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
         }
     }
 }

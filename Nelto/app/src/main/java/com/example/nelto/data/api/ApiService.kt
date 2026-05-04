@@ -7,8 +7,10 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Header
+import com.example.nelto.data.models.network.UpdateProfileRequest
 import com.example.nelto.data.models.network.ProfileResponse
 
 interface ApiService {
@@ -26,5 +28,11 @@ interface ApiService {
     @GET("api/users/profile")
     suspend fun getProfile(
         @Header("Authorization") token: String
+    ): Response<ProfileResponse>
+
+    @PUT("api/users/profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
     ): Response<ProfileResponse>
 }

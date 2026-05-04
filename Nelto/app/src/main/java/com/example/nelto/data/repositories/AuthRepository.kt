@@ -7,6 +7,7 @@ import android.util.Log
 import com.example.nelto.data.models.network.RegisterRequest
 import com.example.nelto.data.models.network.UserData
 import com.example.nelto.utils.SessionManager
+import com.example.nelto.data.models.network.UpdateProfileRequest
 class AuthRepository(private val sessionManager: SessionManager){
     suspend fun register(
         nombre: String,
@@ -16,6 +17,7 @@ class AuthRepository(private val sessionManager: SessionManager){
         password: String,
         alias: String,
         telefono: String,
+        correo: String? = null,
         avatarBase64: String? = null
     ): LoginResponse? {
         return try {
@@ -77,6 +79,48 @@ class AuthRepository(private val sessionManager: SessionManager){
 
             if (response.isSuccessful && response.body() != null) {
                 Log.d("AUTH_REPO", "✅ Perfil obtenido")
+                response.body()?.user
+            } else {
+                Log.e("AUTH_REPO", "❌ Error: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("AUTH_REPO", "❌ Excepción: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun updateProfile(
+        nombre: String? = null,
+        apellidoPaterno: String? = null,
+        apellidoMaterno: String? = null,
+        alias: String? = null,
+        telefono: String? = null,
+        correo: String? = null,
+        avatarBase64: String? = null
+    ): UserData? {
+        return try {
+            val token = sessionManager.getToken()
+            if (token.isNullOrEmpty()) {
+                Log.e("AUTH_REPO", "No hay token disponible")
+                return null
+            }
+
+            val request = UpdateProfileRequest(
+                nombre = nombre,
+                apellido_paterno = apellidoPaterno,
+                apellido_materno = apellidoMaterno,
+                alias = alias,
+                telefono = telefono,
+                correo = correo,
+                avatar = avatarBase64
+            )
+            Log.d("AUTH_REPO", "📝 Actualizando perfil")
+            val response = RetrofitClient.apiService.updateProfile("Bearer $token", request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Log.d("AUTH_REPO", "✅ Perfil actualizado")
+                sessionManager.guardarSesionDesdeLogin(response.body()!!.user)
                 response.body()?.user
             } else {
                 Log.e("AUTH_REPO", "❌ Error: ${response.code()}")

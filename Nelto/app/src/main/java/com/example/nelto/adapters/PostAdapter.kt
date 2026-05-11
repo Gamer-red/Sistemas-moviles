@@ -1,19 +1,16 @@
 package com.example.nelto.adapters
 
-
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
 import com.example.nelto.R
 import com.example.nelto.models.Post
+import com.google.android.material.button.MaterialButton
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-
 
 class PostAdapter(
     private var posts: List<Post>,
@@ -23,19 +20,16 @@ class PostAdapter(
     private val onGuardarClick: (Post) -> Unit
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
-    // ViewHolder: Contiene las vistas de cada item
     class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val ivAvatar: ImageView = itemView.findViewById(R.id.ivPostAvatar)
         val tvAlias: TextView = itemView.findViewById(R.id.tvPostAlias)
         val tvFecha: TextView = itemView.findViewById(R.id.tvPostFecha)
+        val tvTitulo: TextView = itemView.findViewById(R.id.tvPostTitulo)
         val tvContenido: TextView = itemView.findViewById(R.id.tvPostContenido)
-        val ivPostImage: ImageView = itemView.findViewById(R.id.ivPostImage)
-        val btnLike: MaterialButton = itemView.findViewById(R.id.btnLike)
         val tvLikes: TextView = itemView.findViewById(R.id.tvLikes)
-        val btnComment: MaterialButton = itemView.findViewById(R.id.btnComment)
         val tvComentarios: TextView = itemView.findViewById(R.id.tvComentarios)
+        val btnLike: MaterialButton = itemView.findViewById(R.id.btnLike)  // ← AGREGAR ESTO
 
-        val btnGuardar: MaterialButton = itemView.findViewById(R.id.btnGuardar)
+        val btnComment: MaterialButton = itemView.findViewById(R.id.btnComment)  // ← AGREGAR ESTO
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
@@ -47,56 +41,40 @@ class PostAdapter(
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
 
-        // Configurar datos básicos
-        holder.tvAlias.text = "@${post.usuarioAlias}"
+        holder.tvAlias.text = "@${post.Alias}"
+        holder.tvTitulo.text = post.Titulo
         holder.tvContenido.text = post.Descripcion
-        holder.tvAlias.text = "@${post.usuarioAlias}"
-
-        // Formatear fecha
-        holder.tvFecha.text = post.Fecha_creacion
-
-        // Configurar contadores
         holder.tvLikes.text = post.likes.toString()
-        holder.tvComentarios.text = post.comentarios.toString()
-
-        // Configurar estado del like
-        if (post.usuarioDioLike) {
-            holder.btnLike.setIconResource(android.R.drawable.btn_star_big_on)
-            holder.btnLike.text = "Quitar like"
-        } else {
-            holder.btnLike.setIconResource(android.R.drawable.btn_star_big_off)
-            holder.btnLike.text = "Me gusta"
-        }
-
-        // Click listeners
-        holder.btnLike.setOnClickListener {
-            onLikeClick(post)
-        }
-
+        holder.tvComentarios.text = post.commentsCount.toString()
         holder.btnComment.setOnClickListener {
             onCommentClick(post)
         }
-
-        holder.itemView.setOnClickListener {
-            onPostClick(post)
+        // Formatear fecha
+        try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            val date = inputFormat.parse(post.Fecha_creacion)
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            holder.tvFecha.text = outputFormat.format(date)
+        } catch (e: Exception) {
+            holder.tvFecha.text = post.Fecha_creacion
         }
 
-        if (post.guardado) {
-            holder.btnGuardar.setIconResource(android.R.drawable.ic_menu_save)
-            holder.btnGuardar.text = "Guardado"
+        // Configurar botón like según el estado
+        if (post.usuarioDioLike) {
+            holder.btnLike.setIconResource(android.R.drawable.btn_star_big_on)
         } else {
-            holder.btnGuardar.setIconResource(android.R.drawable.ic_menu_save)
-            holder.btnGuardar.text = "Guardar"
+            holder.btnLike.setIconResource(android.R.drawable.btn_star_big_off)
         }
+        holder.btnLike.text = "Me gusta"
 
-        holder.btnGuardar.setOnClickListener {
-            onGuardarClick(post)
+        // Click listener para el botón like
+        holder.btnLike.setOnClickListener {
+            onLikeClick(post)
         }
     }
 
     override fun getItemCount() = posts.size
 
-    // Función para actualizar la lista
     fun updatePosts(newPosts: List<Post>) {
         this.posts = newPosts
         notifyDataSetChanged()

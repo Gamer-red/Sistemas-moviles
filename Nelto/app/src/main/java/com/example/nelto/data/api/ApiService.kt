@@ -12,6 +12,13 @@ import retrofit2.http.Path
 import retrofit2.http.Header
 import com.example.nelto.data.models.network.UpdateProfileRequest
 import com.example.nelto.data.models.network.ProfileResponse
+import retrofit2.http.Query
+import com.example.nelto.data.models.network.PostsResponse
+import com.example.nelto.data.models.network.LikeResponse
+import com.example.nelto.data.models.network.LikeRequest
+import com.example.nelto.data.models.network.CommentsResponse
+import com.example.nelto.data.models.network.CreateCommentRequest
+import com.example.nelto.data.models.network.CreateCommentResponse
 
 interface ApiService {
 
@@ -35,4 +42,30 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: UpdateProfileRequest
     ): Response<ProfileResponse>
+
+    @GET("api/posts")
+    suspend fun getPublicaciones(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
+    ): Response<PostsResponse>
+
+    @POST("api/reactions/insertarReaccion")
+    suspend fun toggleLike(
+        @Header("Authorization") token: String,
+        @Body request: LikeRequest
+    ): Response<LikeResponse>
+
+    @GET("api/comments/post/{postId}")
+    suspend fun getCommentsByPost(
+        @Header("Authorization") token: String,
+        @Path("postId") postId: Int
+    ): Response<CommentsResponse>
+
+    @POST("api/comments/")
+    suspend fun createComment(
+        @Header("Authorization") token: String,
+        @Body request: CreateCommentRequest
+    ): Response<CreateCommentResponse>
+
 }

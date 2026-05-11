@@ -7,21 +7,26 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.example.nelto.adapters.PostAdapter
+import com.example.nelto.models.Post
+import com.example.nelto.data.repositories.PostRepository
+import com.example.nelto.utils.SessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.util.Log
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
-import  com.example.nelto.adapters.PostAdapter
-import  com.example.nelto.models.Post
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class PostsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var fabNuevoPost: FloatingActionButton
-    private lateinit var postAdapter: PostAdapter  // lateinit está bien
+    private lateinit var postAdapter: PostAdapter
+    private lateinit var postRepository: PostRepository
+    private lateinit var sessionManager: SessionManager
 
-    private val publicacionesGuardadas = mutableListOf<Post>()
-
-    // Lista de posts
     private val postsList = mutableListOf<Post>()
 
     override fun onCreateView(
@@ -32,20 +37,17 @@ class PostsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_posts, container, false)
 
         recyclerView = view.findViewById(R.id.recyclerViewPosts)
-        fabNuevoPost = view.findViewById(R.id.fabNuevoPost)
+
+        sessionManager = SessionManager(requireContext())
+        postRepository = PostRepository(sessionManager)
 
         setupRecyclerView()
-
-
-        setupListeners()
-
-        cargarPostsEjemplo()
+        cargarPublicaciones()
 
         return view
     }
 
     private fun setupRecyclerView() {
-
         postAdapter = PostAdapter(
             posts = postsList,
             onLikeClick = { post -> manejarLike(post) },
@@ -56,96 +58,182 @@ class PostsFragment : Fragment() {
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = postAdapter
+        Log.d("PostsFragment", "Adaptador inicializado")
     }
 
-    private fun setupListeners() {
-        fabNuevoPost.setOnClickListener {
-            mostrarDialogoNuevoPost()
+    private fun cargarPublicaciones() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = postRepository.getPublicaciones(1, 20)
+
+                withContext(Dispatchers.Main) {
+                    if (response != null) {
+                        postsList.clear()
+                        postsList.addAll(response.posts)
+                        postAdapter.updatePosts(postsList)
+                        Log.d("PostsFragment", "✅ Mostrando ${postsList.size} publicaciones")
+                    } else {
+                        Log.e("PostsFragment", "❌ Error al cargar publicaciones")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("PostsFragment", "❌ Excepción: ${e.message}")
+                }
+            }
         }
     }
 
-    private fun cargarPostsEjemplo() {
-
-
-
-        postsList.clear()
-
-
-        postsList.addAll(
-            listOf(
-                Post(
-                    id_publicaciones = 1,
-                    Id_usuario = 101,
-                    Titulo = "¡Hola a todos!",
-                    Descripcion = "Esta es mi primera publicación en la red social escolar.",
-                    Fecha_creacion = "2024-03-09",
-                    Fecha_modificacion = "2024-03-09",
-                    Borrador = 0,
-                    usuarioAlias = "juanito",
-                    likes = 5,
-                    comentarios = 2,
-                    usuarioDioLike = false
-                ),
-                Post(
-                    id_publicaciones = 2,
-                    Id_usuario = 102,
-                    Titulo = "Apuntes de matemáticas",
-                    Descripcion = "¿Alguien tiene apuntes de la clase de matemáticas?",
-                    Fecha_creacion = "2024-03-08",
-                    Fecha_modificacion = "2024-03-08",
-                    Borrador = 0,
-                    usuarioAlias = "maria_123",
-                    likes = 3,
-                    comentarios = 4,
-                    usuarioDioLike = false
-                ),
-                Post(
-                    id_publicaciones = 3,
-                    Id_usuario = 103,
-                    Titulo = "Artículo de programación",
-                    Descripcion = "Comparto este artículo interesante sobre programación en Android",
-                    Fecha_creacion = "2024-03-07",
-                    Fecha_modificacion = "2024-03-07",
-                    Borrador = 0,
-                    usuarioAlias = "carlos_tech",
-                    likes = 10,
-                    comentarios = 1,
-                    usuarioDioLike = false
-                )
-            )
-        )
-
-        // Actualizar el adaptador con los nuevos datos
-        postAdapter.updatePosts(postsList)
-    }
-
     private fun manejarLike(post: Post) {
-        val index = postsList.indexOfFirst { it.id_publicaciones == post.id_publicaciones }
-        if (index != -1) {
-            val postActualizado = post.copy(
-                likes = if (post.usuarioDioLike) post.likes - 1 else post.likes + 1,
-                usuarioDioLike = !post.usuarioDioLike
-            )
-            postsList[index] = postActualizado
-            postAdapter.updatePosts(postsList)
+        val userId = sessionManager.getUserId()
+        Log.d("PostsFragment", "🔘 Click en like - PostId: ${post.id_publicaciones}, UserId: $userId")
 
-            com.google.android.material.snackbar.Snackbar.make(
-                requireView(),
-                if (postActualizado.usuarioDioLike) "Te gusta esta publicación" else "Quitaste el like",
-                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-            ).show()
+        if (userId == 0) {
+            Log.e("PostsFragment", "❌ Usuario no logueado")
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d("PostsFragment", "📡 Enviando petición de like al backend")
+                val result = postRepository.toggleLike(post.id_publicaciones, userId)
+
+                withContext(Dispatchers.Main) {
+                    if (result != null) {
+                        Log.d("PostsFragment", "✅ Respuesta: action=${result.action}, userReaction=${result.userReaction}")
+
+                        val index = postsList.indexOfFirst { it.id_publicaciones == post.id_publicaciones }
+                        if (index != -1) {
+                            val postActualizado = when (result.action) {
+                                "removed" -> {
+                                    // Se quitó el like - actualizar contador y estado
+                                    post.copy(
+                                        likes = result.counts?.me_gusta ?: 0,
+                                        usuarioDioLike = false
+                                    )
+                                }
+                                else -> {
+                                    // "added" o "updated" - actualizar normalmente
+                                    post.copy(
+                                        likes = result.counts?.me_gusta ?: 0,
+                                        usuarioDioLike = result.userReaction == "me_gusta"
+                                    )
+                                }
+                            }
+                            postsList[index] = postActualizado
+                            postAdapter.updatePosts(postsList)
+
+                            // Mostrar mensaje opcional
+                            val mensaje = when (result.action) {
+                                "removed" -> "Like eliminado"
+                                "added" -> "Te gusta esta publicación"
+                                else -> "Like actualizado"
+                            }
+                            com.google.android.material.snackbar.Snackbar.make(
+                                requireView(),
+                                mensaje,
+                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Log.e("PostsFragment", "❌ Resultado nulo")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e("PostsFragment", "❌ Excepción: ${e.message}")
+                    com.google.android.material.snackbar.Snackbar.make(
+                        requireView(),
+                        "Error al procesar like",
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
 
     private fun abrirComentarios(post: Post) {
-        com.google.android.material.snackbar.Snackbar.make(
-            requireView(),
-            "Comentarios de ${post.usuarioAlias}",
-            com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-        ).show()
+        Log.d("PostsFragment", "Abrir comentarios para: ${post.Titulo}")
+
+        // Crear un diálogo simple para comentarios
+        val dialogView = layoutInflater.inflate(R.layout.dialog_comentarios, null)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.recyclerViewDialogComments)
+        val etComentario = dialogView.findViewById<TextInputEditText>(R.id.etDialogComentario)
+        val btnEnviar = dialogView.findViewById<MaterialButton>(R.id.btnDialogEnviar)
+
+        // Configurar RecyclerView para comentarios
+        val commentAdapter = CommentAdapter(mutableListOf())
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = commentAdapter
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Comentarios - ${post.Titulo}")
+            .setView(dialogView)
+            .setPositiveButton("Cerrar", null)
+            .show()
+
+        // Cargar comentarios existentes
+        cargarComentariosEnDialog(post.id_publicaciones, commentAdapter)
+
+        // Enviar nuevo comentario
+        btnEnviar.setOnClickListener {
+            val comentario = etComentario.text.toString().trim()
+            if (comentario.isNotEmpty()) {
+                enviarComentario(post.id_publicaciones, comentario, commentAdapter, etComentario)
+            }
+        }
+    }
+
+    private fun cargarComentariosEnDialog(postId: Int, adapter: CommentAdapter) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val comments = postRepository.getCommentsByPost(postId)
+            withContext(Dispatchers.Main) {
+                adapter.updateComments(comments)
+            }
+        }
+    }
+
+    private fun enviarComentario(postId: Int, comentario: String, adapter: CommentAdapter, etComentario: TextInputEditText) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val newComment = postRepository.createComment(postId, comentario)
+            withContext(Dispatchers.Main) {
+                if (newComment != null) {
+                    etComentario.text?.clear()
+
+                    // Recargar comentarios
+                    val comments = postRepository.getCommentsByPost(postId)
+                    adapter.updateComments(comments)
+
+                    // ✅ ACTUALIZAR CONTADOR EN EL POST
+                    actualizarContadorComentarios(postId, comments.size)
+
+                    com.google.android.material.snackbar.Snackbar.make(
+                        requireView(),
+                        "Comentario agregado",
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                    ).show()
+                } else {
+                    com.google.android.material.snackbar.Snackbar.make(
+                        requireView(),
+                        "Error al enviar comentario",
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun actualizarContadorComentarios(postId: Int, nuevoTotal: Int) {
+        val index = postsList.indexOfFirst { it.id_publicaciones == postId }
+        if (index != -1) {
+            val postActualizado = postsList[index].copy(commentsCount = nuevoTotal)
+            postsList[index] = postActualizado
+            postAdapter.updatePosts(postsList)
+        }
     }
 
     private fun verPostDetalle(post: Post) {
+        Log.d("PostsFragment", "Viendo: ${post.Titulo}")
         com.google.android.material.snackbar.Snackbar.make(
             requireView(),
             "Viendo: ${post.Titulo}",
@@ -153,90 +241,12 @@ class PostsFragment : Fragment() {
         ).show()
     }
 
-    private fun mostrarDialogoNuevoPost() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_nuevo_post, null)
-        val etTitulo = dialogView.findViewById<TextInputEditText>(R.id.etNuevoPostTitulo)
-        val etDescripcion = dialogView.findViewById<TextInputEditText>(R.id.etNuevoPostDescripcion)
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Nueva publicación")
-            .setView(dialogView)
-            .setPositiveButton("Publicar") { _, _ ->
-                val titulo = etTitulo.text.toString().trim()
-                val descripcion = etDescripcion.text.toString().trim()
-
-                if (titulo.isNotEmpty() && descripcion.isNotEmpty()) {
-                    crearNuevoPost(titulo, descripcion)
-                } else {
-                    com.google.android.material.snackbar.Snackbar.make(
-                        requireView(),
-                        "Título y descripción son requeridos",
-                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                    ).show()
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun crearNuevoPost(titulo: String, descripcion: String) {
-        val nuevoPost = Post(
-            id_publicaciones = (postsList.size + 1), // ID temporal
-            Id_usuario = 101, // TODO: Obtener ID del usuario logueado
-            Titulo = titulo,
-            Descripcion = descripcion,
-            Fecha_creacion = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                .format(java.util.Date()),
-            Fecha_modificacion = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                .format(java.util.Date()),
-            Borrador = 0,
-            usuarioAlias = "usuario_actual", // TODO: Obtener alias del usuario logueado
-            likes = 0,
-            comentarios = 0,
-            usuarioDioLike = false
-        )
-
-        postsList.add(0, nuevoPost)
-        postAdapter.updatePosts(postsList)
-
-
-        recyclerView.scrollToPosition(0)
-
+    private fun manejarGuardado(post: Post) {
+        Log.d("PostsFragment", "Guardar: ${post.Titulo}")
         com.google.android.material.snackbar.Snackbar.make(
             requireView(),
-            "Publicación creada",
+            "Funcionalidad pendiente: Guardar",
             com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
         ).show()
-    }
-
-    private fun manejarGuardado(post: Post) {
-        val index = postsList.indexOfFirst { it.id_publicaciones == post.id_publicaciones }
-        if (index != -1) {
-            val postActualizado = post.copy(
-                guardado = !post.guardado
-            )
-            postsList[index] = postActualizado
-            postAdapter.updatePosts(postsList)
-
-            if (postActualizado.guardado) {
-                // Agregar a guardados
-                if (!publicacionesGuardadas.any { it.id_publicaciones == post.id_publicaciones }) {
-                    publicacionesGuardadas.add(postActualizado)
-                }
-                com.google.android.material.snackbar.Snackbar.make(
-                    requireView(),
-                    "Publicación guardada",
-                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                ).show()
-            } else {
-                // Quitar de guardados
-                publicacionesGuardadas.removeAll { it.id_publicaciones == post.id_publicaciones }
-                com.google.android.material.snackbar.Snackbar.make(
-                    requireView(),
-                    "Publicación eliminada de guardados",
-                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-                ).show()
-            }
-        }
     }
 }

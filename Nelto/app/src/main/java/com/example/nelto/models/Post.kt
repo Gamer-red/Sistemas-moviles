@@ -1,25 +1,23 @@
 package com.example.nelto.models
 
 import android.net.Uri
-import java.util.Date
 
-/**
- * Modelo que representa una publicación en la red social
- */
 data class Post(
-    // Campos que vienen de la BD
-    val id_publicaciones: Int = 0,
-    val Id_usuario: Int = 0,
-    val Titulo: String = "",
-    val Descripcion: String = "",
-    val Fecha_creacion: String = "",
-    val Fecha_modificacion: String = "",
-    val Borrador: Int = 0,
-
-    // Campos adicionales para la UI (no vienen de la BD)
-    val usuarioAlias: String = "",
+    val id_publicaciones: Int,
+    val Id_usuario: Int,
+    val Titulo: String,
+    val Descripcion: String,
+    val Fecha_creacion: String,
+    val Fecha_modificacion: String?,
+    val Borrador: Int,
+    val Alias: String,              // ← El backend devuelve "Alias"
+    val Nombre: String,             // ← El backend devuelve "Nombre"
+    val likes: Int = 0,
+    val commentsCount: Int = 0,
     var usuarioDioLike: Boolean = false,
-    var likes: Int = 0,
-    var comentarios: Int = 0,
     var guardado: Boolean = false
-)
+) {
+    // Propiedad calculada para compatibilidad con el adaptador existente
+    val usuarioAlias: String get() = Alias
+    val usuarioNombre: String get() = Nombre
+}
